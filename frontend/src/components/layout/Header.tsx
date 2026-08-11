@@ -43,7 +43,7 @@ export function Header() {
               className={`isu-header__nav-list ${menuOpen ? 'is-open' : ''}`}
             >
               <li>
-                <a href="https://github.com/anphan0828/CAFA_forever" target="_blank" rel="noopener noreferrer">
+                <a href="https://github.com/FriedbergLab/CAFA_forever" target="_blank" rel="noopener noreferrer">
                   GitHub
                 </a>
               </li>

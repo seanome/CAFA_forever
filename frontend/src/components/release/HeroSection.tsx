@@ -58,7 +58,7 @@ export function HeroSection() {
             </svg>
           </button>
           <a
-            href="https://github.com/anphan0828/LAFA_container_guide"
+            href="https://github.com/FriedbergLab/LAFA_container_guide"
             target="_blank"
             rel="noopener noreferrer"
             className="hero__badge hero__badge--secondary"

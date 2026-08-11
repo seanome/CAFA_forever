@@ -23,7 +23,7 @@ export function Footer() {
               <h3 className="site-footer__heading">Resources</h3>
               <ul>
                 <li>
-                  <a href="https://github.com/anphan0828/CAFA_forever" target="_blank" rel="noopener noreferrer">
+                  <a href="https://github.com/FriedbergLab/CAFA_forever" target="_blank" rel="noopener noreferrer">
                     GitHub Repository
                   </a>
                 </li>
