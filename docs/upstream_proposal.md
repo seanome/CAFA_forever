@@ -10,7 +10,8 @@ LAFA scores GO terms for a whole protein. The fork adds a second task, region tr
 method copies a domain or feature onto a human protein from a related protein in another
 species, and is scored on where the copy lands. The first release holds the QfO Pfam region
 benchmark: 998 human proteins searched against 15 Quest for Orthologs proteomes by 9 tools at
-23 settings, graded against Pfam, Pfam-N and Swiss-Prot features (30,029 rows).
+23 settings, graded against Pfam, Pfam-N and Swiss-Prot features: 29,379 release rows, each
+holding the 7 metrics of one stratum (205,653 rows of the long results table).
 
 1. **Data contract, extended, not changed.** `evaluation_best_f_micro_w.tsv` and
    `evaluation_all.tsv` may carry eight more columns: `task`, `stratum_axis`, `stratum_bin`,
@@ -21,8 +22,9 @@ benchmark: 998 human proteins searched against 15 Quest for Orthologs proteomes 
 2. **A region release folder** has `release_info.tsv` (task, source commit, checksums,
    prices) and one subset, `results_ALL/`, in place of NK, LK and PK. `ns` holds the truth set
    instead of a GO aspect. Its id is not a T0-T1 window, so it stays off the timeline.
-3. **A converter and a Nextflow mode.** `scripts/leaderboard_to_release.py` turns two tables
-   (results and compute, from seanome/2024-kmerseek-analysis) into that folder;
+3. **A converter and a Nextflow mode.** `scripts/leaderboard_to_release.py` turns one
+   experiment of two long tables (results and compute, one row per metric, from
+   seanome/2024-kmerseek-analysis) into that folder;
    `--mode region_release` runs it through `modules/local/region_release.nf` and then your
    `PUBLISH_RELEASE_DIRECTORY` and `BUILD_RELEASE_CATALOG`.
 4. **Frontend.** A switch between the two tasks. The GO views are yours, unchanged, plus your
@@ -44,7 +46,8 @@ benchmark: 998 human proteins searched against 15 Quest for Orthologs proteomes 
   Precision Recall Curves tabs show the same text as your build.
 - `nextflow run main.nf -stub` passes for `timepoint_build`, `evaluate_window` (all seven
   methods), `evaluate_late_predictions` and `region_release`.
-- The converter writes the 30,029 rows and reads them back identical, value for value.
+- The converter writes the experiment's 205,653 long rows and reads them back identical,
+  value for value; a key missing one metric is refused instead of filled.
 
 ## What a merge would need
 

@@ -326,9 +326,10 @@ function RegionTable({ rows, notRun, onTool }: { rows: RegionRow[]; notRun: { to
   return (
     <div className="region-table-wrap">
       <p className="region-note">
-        One row per tool setting. Click a column to sort. CPU-hours and GPU-hours are per 1,000 human query proteins and count
-        the search only, not building the relative's database. "—" means not measured. Cost = CPU-hours × $0.044625 +
-        GPU-hours × $1.006 (AWS on-demand prices, US East, read 2026-10-15).
+        One row per tool setting. Click a column to sort. CPU-h is reserved core-hours (cores × wall time) of the search, per
+        relative searched and per 1,000 human query proteins; building the relative's database is not counted. GPU-h is the
+        same for GPUs. "—" means not measured. Cost = CPU-h × $0.044625 + GPU-h × $1.006 (AWS on-demand prices, US East, read
+        2026-10-15).
       </p>
       <table className="region-table">
         <thead>
@@ -338,9 +339,9 @@ function RegionTable({ rows, notRun, onTool }: { rows: RegionRow[]; notRun: { to
             {head('auprc', 'AUPRC', METRICS[1].help)}
             {head('medianIouTp', 'Median IoU', METRICS[2].help)}
             {head('n', 'True instances', 'known regions in this stratum')}
-            {head('cpuH', 'CPU-h', 'CPU-hours per 1,000 queries')}
+            {head('cpuH', 'CPU-h', 'reserved core-hours per relative, per 1,000 queries')}
             {head('peakRamGb', 'Peak RAM, GB', 'peak memory of one search task')}
-            {head('gpuH', 'GPU-h', 'GPU-hours per 1,000 queries')}
+            {head('gpuH', 'GPU-h', 'GPU-hours per relative, per 1,000 queries')}
             {head('costUsdEst', 'Cost, US$', 'estimated cost per 1,000 queries')}
             <th scope="col">Cost source</th>
           </tr>
@@ -410,7 +411,7 @@ function CostPlot({ rows, metric, onTool }: { rows: RegionRow[]; metric: MetricI
     <div className="region-plot">
       <p className="region-note">
         Up is better ({metricInfo.label}: {metricInfo.help}); left is cheaper. The x axis spaces values by ratio: the step from
-        0.01 to 0.1 CPU-hours takes as much room as the step from 0.1 to 1. The dark line joins the settings that no other
+        0.01 to 0.1 core-hours takes as much room as the step from 0.1 to 1. The dark line joins the settings that no other
         setting beats on both score and cost.
       </p>
       <KindLegend rows={withCost} />
@@ -432,7 +433,7 @@ function CostPlot({ rows, metric, onTool }: { rows: RegionRow[]; metric: MetricI
             <text x={M.l - 8} y={py(t) + 4} textAnchor="end" className="tick">{t.toFixed(1)}</text>
           </g>
         ))}
-        <text x={(M.l + W - M.r) / 2} y={H - 10} textAnchor="middle" className="axis-label">CPU-hours per 1,000 query proteins (search step)</text>
+        <text x={(M.l + W - M.r) / 2} y={H - 10} textAnchor="middle" className="axis-label">Reserved core-hours of the search, per relative and per 1,000 query proteins</text>
         <text transform={`translate(16 ${(M.t + H - M.b) / 2}) rotate(-90)`} textAnchor="middle" className="axis-label">{metricInfo.label}</text>
         <polyline
           points={front.map((r) => `${px(r.cpuH as number)},${py(r[metric] as number)}`).join(' ')}
@@ -448,7 +449,7 @@ function CostPlot({ rows, metric, onTool }: { rows: RegionRow[]; metric: MetricI
             y={py(r[metric] as number)}
             color={toolColor(r.tool)}
             filled={r.provenance !== 'reported'}
-            title={`${toolName(r.tool)} ${settingShort(r.tool, r.setting)}: ${metricInfo.label} ${fmt3(r[metric])}, ${fmtSig(r.cpuH)} CPU-h per 1,000 queries, ${r.costUsdEst === null ? 'cost not measured' : `$${fmtSig(r.costUsdEst)}`}`}
+            title={`${toolName(r.tool)} ${settingShort(r.tool, r.setting)}: ${metricInfo.label} ${fmt3(r[metric])}, ${fmtSig(r.cpuH)} core-hours per relative per 1,000 queries, ${r.costUsdEst === null ? 'cost not measured' : `$${fmtSig(r.costUsdEst)}`}`}
             onClick={() => onTool(r.tool)}
           />
         ))}

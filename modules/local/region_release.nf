@@ -32,6 +32,7 @@ process BUILD_REGION_RELEASE {
     python3 "${file(params.workspace_root)}/scripts/leaderboard_to_release.py" \
       --results "${resultsParquet}" \
       --compute "${computeParquet}" \
+      --experiment "${params.leaderboard_experiment}" \
       --out-dir . \
       --release-id "${meta.release_id}" \
       --title "${meta.title}" \
@@ -49,8 +50,8 @@ process BUILD_REGION_RELEASE {
     printf 'key\\tvalue\\ntask\\tregion_transfer\\ntitle\\tstub\\nn_queries\\t1\\n' > "${r}/release_info.tsv"
     printf 'filename\\tlabel\\tgroup\\ttask\\ttool\\tsetting\\nstub__default\\tstub default\\tstub\\tregion_transfer\\tstub\\tdefault\\n' > "${r}/method_names.tsv"
     printf 'method\\tALL\\nstub default\\ttrue\\n' > "${r}/method_availability.tsv"
-    printf 'filename\\tns\\ttau\\tn\\tpr_micro_w\\trc_micro_w\\tf_micro_w\\tcov_w\\ttask\\tstratum_axis\\tstratum_bin\\tspecies\\tdedup\\nstub__default\\tpfam\\t0\\t1\\t0\\t0\\t0\\t\\tregion_transfer\\tall\\tall\\tall\\tfalse\\n' > "${r}/results_ALL/evaluation_best_f_micro_w.tsv"
-    printf 'filename\\tns\\ttau\\tcov\\trc_micro_w\\tpr_micro_w\\tf_micro_w\\ttask\\tstratum_axis\\tstratum_bin\\tspecies\\tdedup\\nstub__default\\tpfam\\t0\\t\\t0\\t0\\t0\\tregion_transfer\\tall\\tall\\tall\\tfalse\\n' > "${r}/results_ALL/evaluation_all.tsv"
+    printf 'filename\\tns\\ttau\\tn\\tpr_micro_w\\trc_micro_w\\tf_micro_w\\tcov_w\\ttask\\tstratum_axis\\tstratum_bin\\ttarget_db\\tdedup_or_raw\\nstub__default\\tpfam\\t\\t1\\t0\\t0\\t0\\t\\tregion_transfer\\tall\\tall\\tQfO stub\\traw\\n' > "${r}/results_ALL/evaluation_best_f_micro_w.tsv"
+    printf 'filename\\tns\\ttau\\tcov\\trc_micro_w\\tpr_micro_w\\tf_micro_w\\ttask\\tstratum_axis\\tstratum_bin\\ttarget_db\\tdedup_or_raw\\nstub__default\\tpfam\\t\\t\\t0\\t0\\t0\\tregion_transfer\\tall\\tall\\tQfO stub\\traw\\n' > "${r}/results_ALL/evaluation_all.tsv"
     """
 }
 

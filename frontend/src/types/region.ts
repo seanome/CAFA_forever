@@ -21,7 +21,8 @@ export interface RegionRow {
   fmax: number
   precision: number
   recall: number
-  threshold: number
+  /** score threshold at Fmax; the long tables do not store it */
+  threshold: number | null
   /** true instances in this stratum */
   n: number
   auprc: number | null
@@ -29,7 +30,7 @@ export interface RegionRow {
   medianIouTp: number | null
   nTpCalls: number | null
   nFpCalls: number | null
-  /** CPU-hours per 1,000 query proteins, search step only */
+  /** reserved core-hours (cores x wall time) of the search step, per relative searched, per 1,000 query proteins */
   cpuH: number | null
   peakRamGb: number | null
   gpuH: number | null

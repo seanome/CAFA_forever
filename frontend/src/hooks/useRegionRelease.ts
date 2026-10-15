@@ -38,7 +38,7 @@ export function flattenRegionBest(best: Record<string, unknown[]>): RegionRow[] 
         fmax: num(e.fmax, `${at}.fmax`),
         precision: num(e.precision, `${at}.precision`),
         recall: num(e.recall, `${at}.recall`),
-        threshold: num(e.threshold, `${at}.threshold`),
+        threshold: numOrNull(e.threshold, `${at}.threshold`),
         n: num(e.n, `${at}.n`),
         auprc: numOrNull(e.auprc, `${at}.auprc`),
         medianIouTp: numOrNull(e.medianIouTp, `${at}.medianIouTp`),

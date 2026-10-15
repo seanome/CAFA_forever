@@ -60,33 +60,34 @@ EXTENSION_COLUMNS = (
 EXTENSION_NUMERIC = ("cpu_h", "peak_ram_gb", "gpu_h", "cost_usd_est")
 PROVENANCE_VALUES = ("measured", "reported")
 
-# Columns a region_transfer row carries beyond the GO ones, named as in results.parquet.
+# Columns a region_transfer row carries beyond the GO ones, named as in the leaderboard's
+# long results.parquet (seanome/2024-kmerseek-analysis PR 148). Metric columns other than
+# fmax, fmax_precision and fmax_recall (which fill f_micro_w, pr_micro_w, rc_micro_w) keep
+# their metric name.
 REGION_EXTRA_COLUMNS = (
     "tool",
     "setting",
-    "truth_set",
-    "dedup",
-    "species",
-    "species_mya",
-    "auprc",
-    "median_iou_tp",
-    "n_reachable_instances",
-    "n_instances_found",
-    "n_calls",
-    "n_tp_calls",
-    "n_fp_calls",
-    "n_proteins_scored",
-    "median_feature_length",
+    "truth_source",
+    "dedup_or_raw",
+    "target_db",
+    "target_mya_to_human",
+    "experiment",
+    "query_set",
+    "tool_version",
+    "target_db_version",
+    "truth_version",
+    "source_path",
+    "source_commit",
 )
-REGION_INT_COLUMNS = (
-    "n_reachable_instances",
-    "n_instances_found",
-    "n_calls",
-    "n_tp_calls",
-    "n_fp_calls",
-    "n_proteins_scored",
+# Columns that are the same for every row of one tool or truth set (versions, source file).
+# generate_data.py lists them once in meta.json instead of on each row of best.json.
+REGION_SOURCE_COLUMNS = (
+    "experiment", "query_set", "tool_version", "target_db_version", "truth_version",
+    "source_path", "source_commit",
 )
-REGION_FLOAT_COLUMNS = ("species_mya", "auprc", "median_iou_tp", "median_feature_length")
+REGION_METRIC_COLUMNS = ("auprc", "median_iou_tp", "family_fmax", "recall_reachable")
+REGION_INT_COLUMNS: tuple[str, ...] = ()
+REGION_FLOAT_COLUMNS = ("target_mya_to_human",) + REGION_METRIC_COLUMNS
 
 GO_REQUIRED_RELEASE_FILES = (
     "method_names.tsv",
@@ -112,18 +113,19 @@ GO_BEST_COLUMNS = ("filename", "ns", "n", "pr_micro_w", "rc_micro_w", "f_micro_w
 GO_ALL_COLUMNS = ("filename", "ns", "tau", "cov", "rc_micro_w", "pr_micro_w", "f_micro_w")
 # cov_w and cov are left empty for region_transfer: CAFA's coverage (share of proteins
 # given any prediction) has no counterpart in results.parquet.
+# tau is left empty for region_transfer: the long table holds no score threshold.
 REGION_BEST_COLUMNS = (
-    "filename", "ns", "n", "pr_micro_w", "rc_micro_w", "f_micro_w", "tau",
-    "task", "stratum_axis", "stratum_bin", "species", "dedup",
+    "filename", "ns", "n", "pr_micro_w", "rc_micro_w", "f_micro_w",
+    "task", "stratum_axis", "stratum_bin", "target_db", "dedup_or_raw",
 )
 REGION_ALL_COLUMNS = (
-    "filename", "ns", "tau", "rc_micro_w", "pr_micro_w", "f_micro_w",
-    "task", "stratum_axis", "stratum_bin", "species", "dedup",
+    "filename", "ns", "rc_micro_w", "pr_micro_w", "f_micro_w",
+    "task", "stratum_axis", "stratum_bin", "target_db", "dedup_or_raw",
 )
 GO_BEST_NUMERIC = ("n", "pr_micro_w", "rc_micro_w", "f_micro_w", "cov_w", "tau")
 GO_ALL_NUMERIC = ("tau", "cov", "rc_micro_w", "pr_micro_w", "f_micro_w")
-REGION_BEST_NUMERIC = ("n", "pr_micro_w", "rc_micro_w", "f_micro_w", "tau")
-REGION_ALL_NUMERIC = ("tau", "rc_micro_w", "pr_micro_w", "f_micro_w")
+REGION_BEST_NUMERIC = ("n", "pr_micro_w", "rc_micro_w", "f_micro_w")
+REGION_ALL_NUMERIC = ("rc_micro_w", "pr_micro_w", "f_micro_w")
 
 RELEASE_INFO_FILE = "release_info.tsv"
 

@@ -26,6 +26,8 @@ from release_contract import (  # noqa: E402
     REGION_EXTRA_COLUMNS,
     REGION_FLOAT_COLUMNS,
     REGION_INT_COLUMNS,
+    REGION_METRIC_COLUMNS,
+    REGION_SOURCE_COLUMNS,
     TASK_GO,
     TASK_LABELS,
     TASK_NS,
@@ -38,7 +40,6 @@ from release_contract import (  # noqa: E402
     extension_values,
     optional_float,
     optional_int,
-    parse_bool,
     read_release_info,
     release_task,
     required_release_files,
@@ -356,7 +357,28 @@ def generate_region_meta(release_id: str, release_dir: Path) -> dict:
             "uniqueAcrossSubsets": n_queries,
         },
         "info": info,
+        "sources": region_sources(release_dir),
     }
+
+
+def region_sources(release_dir: Path) -> dict:
+    """Each source column's values, once per tool (versions) or once overall (the rest)."""
+    rows = parse_tsv(release_dir / "results_ALL" / "evaluation_best_f_micro_w.tsv")
+    out = {}
+    for column in REGION_SOURCE_COLUMNS:
+        if column == "tool_version":
+            by_tool = defaultdict(set)
+            for row in rows:
+                by_tool[row["tool"]].add(row.get(column, ""))
+            out[camel(column)] = {tool: sorted(v) for tool, v in sorted(by_tool.items())}
+        elif column == "truth_version":
+            by_truth = defaultdict(set)
+            for row in rows:
+                by_truth[row["ns"]].add(row.get(column, ""))
+            out[camel(column)] = {truth: sorted(v) for truth, v in sorted(by_truth.items())}
+        else:
+            out[camel(column)] = sorted({row.get(column, "") for row in rows})
+    return out
 
 
 def generate_release_meta(release_id: str, release_dir: Path) -> dict:
@@ -449,23 +471,30 @@ def read_results_table(path: Path, task: str, columns, numeric) -> list[dict]:
     return rows
 
 
+def camel(column: str) -> str:
+    return "".join(w.capitalize() if i else w for i, w in enumerate(column.split("_")))
+
+
 def region_values(row: dict) -> dict:
     """The region_transfer columns of one row, typed, with camelCase keys."""
     out = {}
-    for column in REGION_EXTRA_COLUMNS:
-        key = "".join(w.capitalize() if i else w for i, w in enumerate(column.split("_")))
+    for column in REGION_EXTRA_COLUMNS + REGION_METRIC_COLUMNS:
+        if column in REGION_SOURCE_COLUMNS:
+            continue
         value = row.get(column, "")
-        if column == "truth_set":
-            # The truth set is stored once, in ns.
-            value = value or row.get("ns", "")
-        if column == "dedup":
-            out[key] = parse_bool(value)
-        elif column in REGION_INT_COLUMNS:
-            out[key] = optional_int(value)
+        if column in REGION_INT_COLUMNS:
+            out[camel(column)] = optional_int(value)
         elif column in REGION_FLOAT_COLUMNS:
-            out[key] = optional_float(value)
+            out[camel(column)] = optional_float(value)
         else:
-            out[key] = value
+            out[camel(column)] = value
+    # Short names the frontend filters on: the truth set id (ns), the relative searched
+    # ("QfO zebrafish" -> zebrafish; a model library such as Pfam-A -> all) and dedup.
+    target = row.get("target_db", "")
+    out["truthSet"] = row.get("ns", "")
+    out["species"] = target[len("QfO "):] if target.startswith("QfO ") else "all"
+    out["speciesMya"] = out["targetMyaToHuman"]
+    out["dedup"] = row.get("dedup_or_raw", "") == "dedup"
     return out
 
 
@@ -501,7 +530,10 @@ def generate_best_metrics(release_dir: Path) -> dict:
                     float(row.get("cov_w", 0)) if task == TASK_GO
                     else optional_float(row.get("cov_w"))
                 ),
-                "threshold": float(row.get("tau", 0)),
+                "threshold": (
+                    float(row.get("tau", 0)) if task == TASK_GO
+                    else optional_float(row.get("tau"))
+                ),
                 "n": float(row.get("n", 0))
             }
             entry.update(extension_values(row, task))
@@ -522,9 +554,8 @@ def curve_key(subset: str, aspect: str, method: str, row: dict, task: str) -> st
     """GO keeps LAFA's key. A region row is one point per stratum, so its key names it."""
     if task == TASK_GO:
         return f"{subset}_{aspect}_{method}"
-    dedup = "dedup" if parse_bool(row.get("dedup", "false")) else "raw"
     return "|".join([
-        subset, aspect, method, dedup, row.get("species", ""),
+        subset, aspect, method, row.get("dedup_or_raw", ""), row.get("target_db", ""),
         row.get("stratum_axis", "all"), row.get("stratum_bin", "all"),
     ])
 
@@ -549,7 +580,7 @@ def generate_curves(release_dir: Path) -> dict:
             method = name_map.get(filename, filename.replace("_predictions.tsv", ""))
 
             point = {
-                "tau": float(row.get("tau", 0)),
+                "tau": float(row.get("tau", 0)) if task == TASK_GO else optional_float(row.get("tau")),
                 "precision": float(row.get("pr_micro_w", 0)),
                 "recall": float(row.get("rc_micro_w", 0))
             }
