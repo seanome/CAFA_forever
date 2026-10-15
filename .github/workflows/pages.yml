@@ -4,7 +4,8 @@ name: Deploy frontend to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    # olgabot/region-leaderboard deploys a preview before the PR merges; drop it at merge.
+    branches: [main, olgabot/region-leaderboard]
   workflow_dispatch:
 
 permissions:
