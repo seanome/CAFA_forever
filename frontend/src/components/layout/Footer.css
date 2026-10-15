@@ -93,3 +93,8 @@
     max-width: 220px;
   }
 }
+
+.site-footer__copyright a {
+  color: var(--surface);
+  text-decoration: underline;
+}

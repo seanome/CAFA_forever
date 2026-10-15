@@ -1,0 +1,18 @@
+key	value
+task	region_transfer
+title	QfO Pfam region benchmark: 998 human proteins against 15 QfO proteomes
+experiment	qfo_region_midi_plus
+run_date	2026-09-13
+n_queries	998
+source_repo	seanome/2024-kmerseek-analysis
+source_commit	6df20c1f290fc123781df8d58097bf7b836535ac
+results_sha256	50a9ea98f3110eb3fffc4e9bbca2de714278118cc2d89c2dd59ac985b323e752
+compute_sha256	8a47ba2123c60cbb41b4833c9f96661934369137b72c5d81ef0808c98247e435
+price_cpu_h_usd	0.044625
+price_gpu_h_usd	1.006
+price_source	AWS EC2 on-demand, US East (N. Virginia), Linux, read 2026-10-15: c7i.large $0.08925/h for 2 vCPU; g5.xlarge $1.006/h for 1 A10G
+cpu_h_unit	reserved core-hours (cores x wall time) of the search step, per relative searched and per 1,000 query proteins; building the relative's database is not counted
+gpu_h_unit	GPU-hours of the search step, per relative searched and per 1,000 query proteins
+n_truth_instances_pfam	2435
+n_truth_instances_pfamn	44315
+n_truth_instances_swissprot	7185

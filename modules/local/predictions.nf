@@ -253,6 +253,8 @@ process PREDICT_FUNBIND_BATCH {
     """
 
     stub:
+    def batchOutputName = "funbind_batch_${String.format('%03d', batchIndex as Integer)}.tsv"
+    def batchManifestName = "funbind_batch_${String.format('%03d', batchIndex as Integer)}.manifest.tsv"
     """
     touch "${batchOutputName}"
     printf 'part_001.fasta\\n' > "${batchManifestName}"

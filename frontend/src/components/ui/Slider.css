@@ -71,11 +71,11 @@
 }
 
 .slider__input:focus-visible::-webkit-slider-thumb {
-  outline: 3px solid var(--isu-gold);
+  outline: 3px solid var(--accent);
   outline-offset: 2px;
 }
 
 .slider__input:focus-visible::-moz-range-thumb {
-  outline: 3px solid var(--isu-gold);
+  outline: 3px solid var(--accent);
   outline-offset: 2px;
 }

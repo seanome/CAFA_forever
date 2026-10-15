@@ -1,0 +1,18 @@
+{
+  "repo": "seanome/protein-function-annotation-leaderboard",
+  "branch": "olgabot/leaderboard-v1",
+  "pull_request": 2,
+  "commit": "2b3e28fc1cd539a82c188aa9da9ebc3bd2bd5072",
+  "path": "docs/tools/",
+  "sha256": {
+    "foldseek.json": "3005400e32cbd25eb80794c60d8ca4d981c20bdd41197fcdc36d71906a505934",
+    "hhblits.json": "a111cf532ce6afb334d807d758430b298727fb8d44b9d7dfc1ae1bea13ec9a48",
+    "hmmer3_jackhmmer.json": "1fce9dd578c6b7db03b1988c552fc6578ab3a44523f371da277b0690f2fd265a",
+    "hmmer3_phmmer.json": "5a75f64c4f238541bf9215cf80c31b9be4e6974f1d502b876777cd309e126925",
+    "hmmscan.json": "b762fbda4bdc08c6a8ec587687f2ce425ab88a79825e9fce9dc4eaedc1295cbb",
+    "kmerseek.json": "8460e139be6fef44b5689f034064e253037cb3e311a3b1892da7732818a54e99",
+    "mmseqs2_iterative.json": "1462156824a1a3cbd11704c9cdfad5d3e9c45cf7bca5a07ec1a2f588c80fe7a0",
+    "mmseqs2_seqseq.json": "42537fa82bf0beec3d7f04ee52233a6c7a41c74da3adc69cc310bcd50dd0d798",
+    "prostt5.json": "f1fbdd44b15bc153cf03af7171497cd48b9e9bcd46f48ca7de6982e73a0a97a0"
+  }
+}

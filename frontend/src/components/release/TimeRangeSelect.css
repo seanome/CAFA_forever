@@ -56,7 +56,7 @@
 .time-range-select__select:focus {
   outline: none;
   border-color: var(--isu-cardinal);
-  box-shadow: 0 0 0 2px rgba(200, 16, 46, 0.1);
+  box-shadow: 0 0 0 2px rgba(20, 90, 99, 0.1);
 }
 
 .time-range-select__select:disabled {
@@ -75,8 +75,8 @@
 .time-range-select__warning {
   margin-top: 0.5rem;
   padding: 0.375rem 0.5rem;
-  background: #fff3cd;
-  color: #856404;
+  background: var(--surface);
+  color: var(--muted);
   font-size: 0.75rem;
   border-radius: 4px;
   text-align: center;

@@ -1,7 +1,8 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-export default defineConfig({
+// `vite build --mode pages` serves the site from https://seanome.github.io/CAFA_forever/.
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
   server: {
     port: 5173,
@@ -11,5 +12,5 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: false,
   },
-  base: '/',
-})
+  base: mode === 'pages' ? '/CAFA_forever/' : '/',
+}))

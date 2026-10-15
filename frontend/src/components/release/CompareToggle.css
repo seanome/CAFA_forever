@@ -49,11 +49,11 @@
 
 /* Override nested timeline selector styling for secondary */
 .compare-toggle__secondary .timeline-selector {
-  --timeline-accent: var(--isu-gold);
-  border-color: var(--isu-gold);
-  background: linear-gradient(to bottom, rgba(241, 190, 72, 0.05), var(--isu-white));
+  --timeline-accent: var(--window-b);
+  border-color: var(--window-b);
+  background: linear-gradient(to bottom, rgba(20, 90, 99, 0.05), var(--isu-white));
 }
 
 .compare-toggle__secondary .recharts-reference-area rect {
-  fill: var(--isu-gold);
+  fill: var(--window-b);
 }

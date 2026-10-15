@@ -20,6 +20,22 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Iterable, List, Sequence, Set, Tuple
 
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from release_contract import (  # noqa: E402
+    TASK_NS,
+    TASK_REGION,
+    TASK_SUBSETS,
+    all_columns,
+    all_numeric,
+    best_columns,
+    best_numeric,
+    release_task,
+    required_release_files,
+    validate_extension_columns,
+)
+
 
 SUBSETS: Sequence[str] = ("NK", "LK", "PK")
 ALLOWED_GT_ASPECTS: Set[str] = {"P", "F", "C"}
@@ -239,18 +255,22 @@ def validate_evaluation_file(
     numeric_columns: Sequence[str],
     expected_filenames: Set[str],
     observed_filenames: Set[str],
+    allowed_ns: Set[str] = ALLOWED_NS,
+    task: str | None = None,
 ) -> None:
     headers, rows = read_tsv(path)
     if add_missing_column_errors(errors, path, headers, required_columns):
         return
 
     validate_numeric_columns(errors, path, rows, numeric_columns)
+    if task is not None:
+        errors.extend(validate_extension_columns(rows, str(path), task)[:20])
 
     for row_index, row in enumerate(rows, start=2):
         ns_value = row.get("ns", "")
-        if ns_value not in ALLOWED_NS:
+        if ns_value not in allowed_ns:
             errors.append(
-                f"{path}:{row_index}: invalid ns '{ns_value}', expected one of {sorted(ALLOWED_NS)}"
+                f"{path}:{row_index}: invalid ns '{ns_value}', expected one of {sorted(allowed_ns)}"
             )
 
         filename = row.get("filename", "")
@@ -270,6 +290,14 @@ def validate_release_window(
     shared_method_names: Path | None = None,
 ) -> ValidationResult:
     result = ValidationResult(release_id=release_dir.name, source_dir=release_dir)
+
+    try:
+        task = release_task(release_dir)
+    except ValueError as exc:
+        result.errors.append(str(exc))
+        return result
+    if task == TASK_REGION:
+        return validate_region_release(release_dir, result)
 
     for relative_path in REQUIRED_RELEASE_FILES:
         if relative_path == "method_names.tsv" and shared_method_names is not None:
@@ -297,6 +325,7 @@ def validate_release_window(
             numeric_columns=NUMERIC_BEST_COLUMNS,
             expected_filenames=method_filenames,
             observed_filenames=observed_filenames,
+            task=task,
         )
         validate_evaluation_file(
             path=subset_dir / "evaluation_all.tsv",
@@ -305,11 +334,43 @@ def validate_release_window(
             numeric_columns=NUMERIC_ALL_COLUMNS,
             expected_filenames=method_filenames,
             observed_filenames=observed_filenames,
+            task=task,
         )
 
     if method_filenames and not observed_filenames:
         result.errors.append(f"{release_dir}: no method filenames found in evaluation tables")
 
+    return result
+
+
+def validate_region_release(release_dir: Path, result: ValidationResult) -> ValidationResult:
+    """A region_transfer release: release_info.tsv and one subset, results_ALL."""
+    for relative_path in required_release_files(TASK_REGION):
+        if not (release_dir / relative_path).exists():
+            result.errors.append(f"{release_dir / relative_path}: missing required file")
+    if result.errors:
+        return result
+
+    method_filenames = validate_method_names(release_dir / "method_names.tsv", result.errors)
+    observed_filenames: Set[str] = set()
+    for subset in TASK_SUBSETS[TASK_REGION]:
+        subset_dir = release_dir / f"results_{subset}"
+        for table, columns, numeric in (
+            ("evaluation_best_f_micro_w.tsv", best_columns(TASK_REGION), best_numeric(TASK_REGION)),
+            ("evaluation_all.tsv", all_columns(TASK_REGION), all_numeric(TASK_REGION)),
+        ):
+            validate_evaluation_file(
+                path=subset_dir / table,
+                errors=result.errors,
+                required_columns=columns,
+                numeric_columns=numeric,
+                expected_filenames=method_filenames,
+                observed_filenames=observed_filenames,
+                allowed_ns=set(TASK_NS[TASK_REGION]),
+                task=TASK_REGION,
+            )
+    if method_filenames and not observed_filenames:
+        result.errors.append(f"{release_dir}: no method filenames found in evaluation tables")
     return result
 
 
@@ -326,6 +387,15 @@ def copy_release_contract(
     shared_method_names: Path | None = None,
 ) -> None:
     staging_dir = target_dir.parent / f".{target_dir.name}.staging"
+    if release_task(source_dir) == TASK_REGION:
+        # A region release has no ground-truth files or GO subsets: copy it whole.
+        if staging_dir.exists():
+            shutil.rmtree(staging_dir)
+        shutil.copytree(source_dir, staging_dir)
+        if target_dir.exists():
+            shutil.rmtree(target_dir)
+        staging_dir.rename(target_dir)
+        return
     ensure_clean_dir(staging_dir)
 
     files_to_copy = [

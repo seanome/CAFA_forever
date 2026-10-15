@@ -1,0 +1,24 @@
+method	ALL
+foldseek 3di_aa	true
+hhblits single_seq	true
+hmmer3_jackhmmer n3	true
+hmmer3_phmmer default	true
+hmmscan direct	true
+kmerseek gbmr4_k15_lcFalse	true
+kmerseek gbmr4_k17_lcFalse	true
+kmerseek gbmr4_k19_lcFalse	true
+kmerseek gbmr4_k21_lcFalse	true
+kmerseek hp_thomas_dill2_k24_lcFalse	true
+kmerseek hp_thomas_dill2_k27_lcFalse	true
+kmerseek hp_thomas_dill2_k30_lcFalse	true
+kmerseek hp_thomas_dill2_k33_lcFalse	true
+kmerseek protein20_k6_lcFalse	true
+kmerseek protein20_k7_lcFalse	true
+kmerseek protein20_k8_lcFalse	true
+kmerseek wwmj5_k11_lcFalse	true
+kmerseek wwmj5_k12_lcFalse	true
+kmerseek wwmj5_k14_lcFalse	true
+kmerseek wwmj5_k15_lcFalse	true
+mmseqs2_iterative s7	true
+mmseqs2_seqseq s7	true
+prostt5 3di_from_seq	true

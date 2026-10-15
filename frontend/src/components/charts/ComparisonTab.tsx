@@ -40,7 +40,7 @@ const METRICS = [
   { key: 'coverage', label: 'Coverage' },
 ] as const
 
-const RELEASE_COLORS = ['var(--isu-cardinal)', 'var(--isu-gold)']
+const RELEASE_COLORS = ['var(--window-a)', 'var(--window-b)']
 
 interface ComparisonTargetValue {
   total: number

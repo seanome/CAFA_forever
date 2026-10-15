@@ -1,17 +1,35 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { AppProvider, useAppState } from './context'
-import { useCatalog, useReleaseData, useMethodsConfig, useComparisonData, useComparableMethods } from './hooks'
+import { useCatalog, useReleaseData, useMethodsConfig, useComparisonData, useComparableMethods, useRegionRelease, useToolCards } from './hooks'
 import { Header, Footer, Section } from './components/layout'
 import { HeroSection, TimelineSelector } from './components/release'
 import { MethodSelector } from './components/methods'
 import { OverallRankingChart, FmaxSmallMultiples, TargetCountChart, PRCurveGrid, ComparisonTab } from './components/charts'
 import { Tabs, Collapsible, type Tab } from './components/ui'
-import { MAX_SELECTED_METHODS, type SelectedReleaseBundle } from './types'
+import { SummaryTable } from './components/table'
+import { RegionView } from './components/region/RegionView'
+import { MAX_SELECTED_METHODS, releaseTask, type Catalog, type SelectedReleaseBundle, type TaskId } from './types'
 import './App.css'
+
+/** LAFA's GO releases only: the timeline and comparison work on T0-T1 windows. */
+function goOnly(catalog: Catalog | null): Catalog | null {
+  if (!catalog) return null
+  return { ...catalog, releases: catalog.releases.filter((r) => releaseTask(r) === 'go_whole_protein') }
+}
 
 function AppContent() {
   const { state, dispatch } = useAppState()
-  const { catalog, loading: catalogLoading, error: catalogError } = useCatalog()
+  const { catalog: fullCatalog, loading: catalogLoading, error: catalogError } = useCatalog()
+  const catalog = useMemo(() => goOnly(fullCatalog), [fullCatalog])
+  const regionReleases = useMemo(
+    () => (fullCatalog?.releases ?? []).filter((r) => releaseTask(r) === 'region_transfer' && r.status === 'ready'),
+    [fullCatalog],
+  )
+  const [task, setTask] = useState<TaskId>('go_whole_protein')
+  const [regionReleaseId, setRegionReleaseId] = useState<string | null>(null)
+  const activeRegionRelease = regionReleaseId ?? regionReleases[regionReleases.length - 1]?.id ?? null
+  const region = useRegionRelease(task === 'region_transfer' ? activeRegionRelease : null)
+  const toolCards = useToolCards()
   const { config: methodsConfig, loading: configLoading, error: configError } = useMethodsConfig()
   const {
     data: releaseData,
@@ -345,6 +363,23 @@ function AppContent() {
       ),
     },
     {
+      id: 'table',
+      label: 'Table',
+      content: (
+        <div className="tab-content">
+          {releaseData.best && state.primaryRelease ? (
+            <SummaryTable
+              bestMetrics={releaseData.best}
+              selectedMethods={selectedMethods}
+              releaseId={state.primaryRelease}
+            />
+          ) : (
+            <p>Select a release to view the table</p>
+          )}
+        </div>
+      ),
+    },
+    {
       id: 'comparison',
       label: 'Comparison',
       hidden: !state.compareMode,
@@ -370,7 +405,61 @@ function AppContent() {
       <main id="main-content" className="main-content">
         <HeroSection />
 
-        {catalog && (
+        {regionReleases.length > 0 && (
+          <Section id="task">
+            <div className="task-switch" role="group" aria-label="Task">
+              <button
+                type="button"
+                aria-pressed={task === 'go_whole_protein'}
+                onClick={() => setTask('go_whole_protein')}
+              >
+                GO terms, whole protein
+              </button>
+              <button
+                type="button"
+                aria-pressed={task === 'region_transfer'}
+                onClick={() => setTask('region_transfer')}
+              >
+                Region transfer
+              </button>
+            </div>
+            <p className="task-switch__help">
+              {task === 'go_whole_protein'
+                ? 'LAFA: methods predict GO terms for a whole protein, scored on terms added to UniProt after a cut-off date.'
+                : 'Each method finds where on a human protein a domain or feature sits, by copying it from a related protein in another species, scored by how well the copied region matches the known one.'}
+            </p>
+          </Section>
+        )}
+
+        {task === 'region_transfer' && (
+          <Section id="region">
+            {regionReleases.length > 1 && (
+              <label className="region-release-select">
+                Release{' '}
+                <select value={activeRegionRelease ?? ''} onChange={(e) => setRegionReleaseId(e.target.value)}>
+                  {regionReleases.map((r) => (
+                    <option key={r.id} value={r.id}>{r.title ?? r.id}</option>
+                  ))}
+                </select>
+              </label>
+            )}
+            {region.loading ? (
+              <div className="loading-container">
+                <div className="loading-spinner" />
+                <p>Loading region release...</p>
+              </div>
+            ) : region.error ? (
+              <div className="error-container">
+                <h2>Error Loading Release Data</h2>
+                <p>{region.error}</p>
+              </div>
+            ) : region.meta ? (
+              <RegionView meta={region.meta} rows={region.rows} cards={toolCards} />
+            ) : null}
+          </Section>
+        )}
+
+        {task === 'go_whole_protein' && catalog && (
           <Section id="analysis">
             <div className="analysis-release-controls">
               <div className="analysis-release-controls__primary">

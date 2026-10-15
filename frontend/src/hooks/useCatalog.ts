@@ -1,3 +1,4 @@
+import { siteUrl } from '../lib/basePath'
 import { useState, useEffect } from 'react'
 import type { Catalog } from '../types'
 import { validateCatalog } from '../lib/dataValidation'
@@ -18,7 +19,7 @@ export function useCatalog(): UseCatalogResult {
 
     async function fetchCatalog() {
       try {
-        const response = await fetch('/data/catalog.json', { cache: 'no-store' })
+        const response = await fetch(siteUrl('data/catalog.json'), { cache: 'no-store' })
         if (!response.ok) {
           throw new Error(`Failed to load catalog: ${response.status}`)
         }

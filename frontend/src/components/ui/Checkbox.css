@@ -39,7 +39,7 @@
 }
 
 .checkbox__input:focus-visible + .checkbox__box {
-  outline: 2px solid var(--isu-gold);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 

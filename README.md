@@ -1,5 +1,24 @@
 # CAFA Forever
 
+> **seanome/CAFA_forever** is a fork of [anphan0828/CAFA_forever](https://github.com/anphan0828/CAFA_forever)
+> (LAFA). It adds a second task, region transfer (where on a protein a domain or feature
+> sits, with stratified and cost-aware scores), beside LAFA's GO scores, and publishes the
+> frontend at https://seanome.github.io/CAFA_forever/. What changed and why:
+> [docs/cafa_forever_map.md](docs/cafa_forever_map.md) and
+> [docs/upstream_proposal.md](docs/upstream_proposal.md). Licence GPL-3.0; see [NOTICE](NOTICE).
+>
+> Build a region release from `results.parquet` and `compute.parquet`
+> (`make leaderboard-tables` in seanome/2024-kmerseek-analysis):
+>
+> ```bash
+> nextflow run main.nf --mode region_release \
+>   --results_parquet results.parquet --compute_parquet compute.parquet \
+>   --release_id region_qfo_pfam_2026_09_13 --release_title "QfO Pfam region benchmark" \
+>   --source_repo seanome/2024-kmerseek-analysis --source_commit <sha> --run_date 2026-09-13
+> ```
+>
+> Static build for GitHub Pages: `make pages` (writes `frontend/dist`).
+
 CAFA Forever has three main components:
 
 - a **Streamlit frontend** in `app/` that remains the default production frontend for now
