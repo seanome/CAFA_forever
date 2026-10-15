@@ -21,6 +21,30 @@ DATA_ROOT = REPO_ROOT / "data"
 RELEASES_DIR = DATA_ROOT / "releases"
 OUTPUT_DIR = FRONTEND_DIR / "public" / "data"
 
+sys.path.insert(0, str(SCRIPT_DIR))
+from release_contract import (  # noqa: E402
+    REGION_EXTRA_COLUMNS,
+    REGION_FLOAT_COLUMNS,
+    REGION_INT_COLUMNS,
+    TASK_GO,
+    TASK_LABELS,
+    TASK_NS,
+    TASK_REGION,
+    TASK_SUBSETS,
+    all_columns,
+    all_numeric,
+    best_columns,
+    best_numeric,
+    extension_values,
+    optional_float,
+    optional_int,
+    parse_bool,
+    read_release_info,
+    release_task,
+    required_release_files,
+    validate_extension_columns,
+)
+
 # Import config from app module
 sys.path.insert(0, str(REPO_ROOT / "app"))
 try:
@@ -48,34 +72,8 @@ ASPECT_SHORT = {"biological_process": "P", "molecular_function": "F", "cellular_
 ASPECT_LONG = {v: k for k, v in ASPECT_SHORT.items()}
 ALLOWED_ASPECTS = set(ASPECT_SHORT)
 ALLOWED_GT_ASPECTS = set(ASPECT_LONG)
-REQUIRED_RELEASE_FILES = [
-    "method_names.tsv",
-    "groundtruth_NK.tsv",
-    "groundtruth_LK.tsv",
-    "groundtruth_PK.tsv",
-    "results_NK/evaluation_best_f_micro_w.tsv",
-    "results_NK/evaluation_all.tsv",
-    "results_LK/evaluation_best_f_micro_w.tsv",
-    "results_LK/evaluation_all.tsv",
-    "results_PK/evaluation_best_f_micro_w.tsv",
-    "results_PK/evaluation_all.tsv",
-]
 REQUIRED_GT_COLUMNS = {"EntryID", "aspect"}
-REQUIRED_BEST_COLUMNS = {
-    "filename",
-    "ns",
-    "n",
-    "pr_micro_w",
-    "rc_micro_w",
-    "f_micro_w",
-    "cov_w",
-    "tau",
-}
-REQUIRED_ALL_COLUMNS = {"filename", "ns", "tau", "cov", "rc_micro_w", "pr_micro_w", "f_micro_w"}
 REQUIRED_METHOD_COLUMNS = {"filename", "label"}
-REQUIRED_AVAILABILITY_COLUMNS = {"method", "NK", "LK", "PK"}
-NUMERIC_BEST_COLUMNS = ["n", "pr_micro_w", "rc_micro_w", "f_micro_w", "cov_w", "tau"]
-NUMERIC_ALL_COLUMNS = ["tau", "cov", "rc_micro_w", "pr_micro_w", "f_micro_w"]
 BOOLEAN_VALUES = {"true": True, "false": False, "1": True, "0": False, "yes": True, "no": False}
 
 
@@ -130,9 +128,9 @@ def coerce_bool(value: str, field_name: str) -> bool:
     return BOOLEAN_VALUES[normalized]
 
 
-def inspect_release_dir(release_dir: Path) -> list[str]:
+def inspect_release_dir(release_dir: Path, task: str = TASK_GO) -> list[str]:
     errors = []
-    for relative_path in REQUIRED_RELEASE_FILES:
+    for relative_path in required_release_files(task):
         if not (release_dir / relative_path).exists():
             errors.append(f"missing {relative_path}")
     return errors
@@ -190,6 +188,7 @@ def generate_catalog() -> dict:
                 })
 
     releases = []
+    other_task_releases = []
     invalid = {}
     timepoints = set()
 
@@ -210,9 +209,23 @@ def generate_catalog() -> dict:
             if not release_dir.exists():
                 invalid[release_id] = [f"release path not found: {release_dir}"]
                 continue
-            release_errors = inspect_release_dir(release_dir)
+            task = release_task(release_dir)
+            release_errors = inspect_release_dir(release_dir, task)
             if release_errors:
                 invalid[release_id] = release_errors
+                continue
+
+            if task != TASK_GO:
+                # A non-GO release is not a T0-T1 window, so it stays off the timeline.
+                info = read_release_info(release_dir)
+                other_task_releases.append({
+                    "id": release_id,
+                    "startTimepoint": info.get("start_timepoint", ""),
+                    "endTimepoint": info.get("end_timepoint", ""),
+                    "status": "ready",
+                    "task": task,
+                    "title": info.get("title", release_id),
+                })
                 continue
 
             start_tp, end_tp = split_release_id(release_id)
@@ -223,7 +236,8 @@ def generate_catalog() -> dict:
                 "id": release_id,
                 "startTimepoint": start_tp,
                 "endTimepoint": end_tp,
-                "status": "ready"
+                "status": "ready",
+                "task": TASK_GO,
             })
         except ValueError as e:
             invalid[release_id] = [str(e)]
@@ -231,6 +245,7 @@ def generate_catalog() -> dict:
 
     releases.sort(key=lambda r: (parse_timepoint_label(r["startTimepoint"]),
                                   parse_timepoint_label(r["endTimepoint"])))
+    releases.extend(sorted(other_task_releases, key=lambda r: r["id"]))
     sorted_timepoints = sorted(timepoints, key=parse_timepoint_label)
     timepoint_dates = {
         timepoint: {
@@ -271,7 +286,13 @@ def generate_methods_config() -> dict:
             "NK": "No Knowledge - targets with no existing experimental annotations",
             "LK": "Limited Knowledge - targets with some existing experimental annotations",
             "PK": "Partial Knowledge - targets with existing experimental annotations"
-        }
+        },
+        "tasks": TASK_LABELS,
+        "taskSubsets": {
+            TASK_REGION: {
+                "ALL": "All query proteins; region transfer has no knowledge settings"
+            }
+        },
     }
 
 
@@ -314,8 +335,34 @@ def count_groundtruth_targets(release_dir: Path) -> dict:
     return counts
 
 
+def generate_region_meta(release_id: str, release_dir: Path) -> dict:
+    """meta.json for a region_transfer release, read from release_info.tsv."""
+    info = read_release_info(release_dir)
+    n_queries = int(info["n_queries"])
+    by_truth = {
+        truth: int(info[f"n_truth_instances_{truth}"])
+        for truth in TASK_NS[TASK_REGION]
+        if info.get(f"n_truth_instances_{truth}")
+    }
+    return {
+        "releaseId": release_id,
+        "task": TASK_REGION,
+        "title": info.get("title", release_id),
+        "startTimepoint": info.get("start_timepoint", ""),
+        "endTimepoint": info.get("end_timepoint", ""),
+        "dates": {"goaStart": "N/A", "goaEnd": "N/A", "uniprotStart": "N/A", "uniprotEnd": "N/A"},
+        "targetCounts": {
+            "ALL": {"total": n_queries, "byAspect": by_truth},
+            "uniqueAcrossSubsets": n_queries,
+        },
+        "info": info,
+    }
+
+
 def generate_release_meta(release_id: str, release_dir: Path) -> dict:
     """Generate meta.json for a release."""
+    if release_task(release_dir) == TASK_REGION:
+        return generate_region_meta(release_id, release_dir)
     start_tp, end_tp = split_release_id(release_id)
 
     start_dates = DATA_DATES.get(start_tp, {})
@@ -338,6 +385,8 @@ def generate_release_meta(release_id: str, release_dir: Path) -> dict:
 def generate_release_methods(release_dir: Path) -> dict:
     """Generate methods.json for a release from method_names and method_availability."""
     methods = {}
+    task = release_task(release_dir)
+    subsets = TASK_SUBSETS[task]
 
     names_rows = parse_tsv(release_dir / "method_names.tsv")
     validate_required_columns(names_rows, REQUIRED_METHOD_COLUMNS, str(release_dir / "method_names.tsv"))
@@ -352,13 +401,16 @@ def generate_release_methods(release_dir: Path) -> dict:
                 "group": group,
                 "availability": {}
             }
+            if task != TASK_GO:
+                methods[label]["tool"] = row.get("tool", "")
+                methods[label]["setting"] = row.get("setting", "")
 
     avail_rows = parse_tsv(release_dir / "method_availability.tsv")
-    validate_required_columns(avail_rows, REQUIRED_AVAILABILITY_COLUMNS, str(release_dir / "method_availability.tsv"))
+    validate_required_columns(avail_rows, {"method", *subsets}, str(release_dir / "method_availability.tsv"))
     for row in avail_rows:
         method_name = row.get("method", "")
         if method_name in methods:
-            for subset in SUBSETS:
+            for subset in subsets:
                 methods[method_name]["availability"][subset] = coerce_bool(
                     row.get(subset, ""),
                     f"{release_dir / 'method_availability.tsv'} column '{subset}'",
@@ -377,17 +429,52 @@ def load_method_name_map(release_dir: Path) -> dict[str, str]:
     }
 
 
+def validate_ns_for_task(rows: list[dict], task: str, name: str) -> None:
+    if task == TASK_GO:
+        validate_ns_values(rows, name)
+        return
+    invalid = sorted({str(row.get("ns", "")).strip() for row in rows} - set(TASK_NS[task]))
+    if invalid:
+        raise ContractError(f"{name} has invalid ns values for {task}: {', '.join(invalid)}")
+
+
+def read_results_table(path: Path, task: str, columns, numeric) -> list[dict]:
+    rows = parse_tsv(path)
+    validate_required_columns(rows, set(columns), str(path))
+    validate_ns_for_task(rows, task, str(path))
+    validate_numeric_columns(rows, list(numeric), str(path))
+    errors = validate_extension_columns(rows, str(path), task)
+    if errors:
+        raise ContractError("; ".join(errors[:5]))
+    return rows
+
+
+def region_values(row: dict) -> dict:
+    """The region_transfer columns of one row, typed, with camelCase keys."""
+    out = {}
+    for column in REGION_EXTRA_COLUMNS:
+        key = "".join(w.capitalize() if i else w for i, w in enumerate(column.split("_")))
+        value = row.get(column, "")
+        if column == "dedup":
+            out[key] = parse_bool(value)
+        elif column in REGION_INT_COLUMNS:
+            out[key] = optional_int(value)
+        elif column in REGION_FLOAT_COLUMNS:
+            out[key] = optional_float(value)
+        else:
+            out[key] = value
+    return out
+
+
 def generate_best_metrics(release_dir: Path) -> dict:
     """Generate best.json with best metrics by subset and aspect."""
     best = {}
     name_map = load_method_name_map(release_dir)
+    task = release_task(release_dir)
 
-    for subset in SUBSETS:
+    for subset in TASK_SUBSETS[task]:
         best_path = release_dir / f"results_{subset}" / "evaluation_best_f_micro_w.tsv"
-        rows = parse_tsv(best_path)
-        validate_required_columns(rows, REQUIRED_BEST_COLUMNS, str(best_path))
-        validate_ns_values(rows, str(best_path))
-        validate_numeric_columns(rows, NUMERIC_BEST_COLUMNS, str(best_path))
+        rows = read_results_table(best_path, task, best_columns(task), best_numeric(task))
 
         if not rows:
             continue
@@ -407,10 +494,16 @@ def generate_best_metrics(release_dir: Path) -> dict:
                 "precision": float(row.get("pr_micro_w", 0)),
                 "recall": float(row.get("rc_micro_w", 0)),
                 "fmax": float(row.get("f_micro_w", 0)),
-                "coverage": float(row.get("cov_w", 0)),
+                "coverage": (
+                    float(row.get("cov_w", 0)) if task == TASK_GO
+                    else optional_float(row.get("cov_w"))
+                ),
                 "threshold": float(row.get("tau", 0)),
                 "n": float(row.get("n", 0))
             }
+            entry.update(extension_values(row, task))
+            if task != TASK_GO:
+                entry.update(region_values(row))
 
             if key not in best:
                 best[key] = []
@@ -422,17 +515,26 @@ def generate_best_metrics(release_dir: Path) -> dict:
     return best
 
 
+def curve_key(subset: str, aspect: str, method: str, row: dict, task: str) -> str:
+    """GO keeps LAFA's key. A region row is one point per stratum, so its key names it."""
+    if task == TASK_GO:
+        return f"{subset}_{aspect}_{method}"
+    dedup = "dedup" if parse_bool(row.get("dedup", "false")) else "raw"
+    return "|".join([
+        subset, aspect, method, dedup, row.get("species", ""),
+        row.get("stratum_axis", "all"), row.get("stratum_bin", "all"),
+    ])
+
+
 def generate_curves(release_dir: Path) -> dict:
     """Generate curves.json with PR curve points."""
     curves = {}
     name_map = load_method_name_map(release_dir)
+    task = release_task(release_dir)
 
-    for subset in SUBSETS:
+    for subset in TASK_SUBSETS[task]:
         all_path = release_dir / f"results_{subset}" / "evaluation_all.tsv"
-        rows = parse_tsv(all_path)
-        validate_required_columns(rows, REQUIRED_ALL_COLUMNS, str(all_path))
-        validate_ns_values(rows, str(all_path))
-        validate_numeric_columns(rows, NUMERIC_ALL_COLUMNS, str(all_path))
+        rows = read_results_table(all_path, task, all_columns(task), all_numeric(task))
 
         if not rows:
             continue
@@ -448,7 +550,7 @@ def generate_curves(release_dir: Path) -> dict:
                 "precision": float(row.get("pr_micro_w", 0)),
                 "recall": float(row.get("rc_micro_w", 0))
             }
-            key = f"{subset}_{aspect}_{method}"
+            key = curve_key(subset, aspect, method, row, task)
             grouped[key].append(point)
 
         for key, points in grouped.items():
@@ -476,7 +578,9 @@ def process_release(release_id: str, release_dir: Path, output_dir: Path):
     print(f"  Generating best.json...")
     best = generate_best_metrics(release_dir)
     with open(release_output / "best.json", "w", encoding="utf-8") as f:
-        json.dump(best, f, indent=2)
+        # A region release has one row per stratum (about 30,000), so it is written compact.
+        indent = 2 if release_task(release_dir) == TASK_GO else None
+        json.dump(best, f, indent=indent)
 
     print(f"  Generating curves.json...")
     curves = generate_curves(release_dir)
@@ -508,6 +612,19 @@ def main():
     with open(OUTPUT_DIR / "methods.json", "w", encoding="utf-8") as f:
         json.dump(methods_config, f, indent=2)
     print(f"  Configured {len(methods_config['methods'])} methods")
+
+    # Tool cards: one JSON per tool, copied as they are
+    cards_dir = DATA_ROOT / "tool_cards"
+    if cards_dir.is_dir():
+        cards_out = OUTPUT_DIR / "tools"
+        cards_out.mkdir(parents=True, exist_ok=True)
+        names = []
+        for card in sorted(cards_dir.glob("*.json")):
+            (cards_out / card.name).write_text(card.read_text(encoding="utf-8"), encoding="utf-8")
+            names.append(card.stem)
+        with open(cards_out / "index.json", "w", encoding="utf-8") as f:
+            json.dump({"tools": names}, f, indent=2)
+        print(f"\nCopied {len(names)} tool cards")
 
     # Process each release
     print("\nProcessing releases...")

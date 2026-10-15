@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-12T21:45:19+00:00",
+  "generated_at": "2026-10-15T13:10:08+00:00",
   "validator": "scripts/publish_release_windows.py",
   "releases": [
     {
@@ -30,6 +30,11 @@
     {
       "release_id": "Sep_2025_Nov_2025",
       "path": "data/releases/Sep_2025_Nov_2025",
+      "status": "ready"
+    },
+    {
+      "release_id": "region_qfo_pfam_2026_09_13",
+      "path": "data/releases/region_qfo_pfam_2026_09_13",
       "status": "ready"
     }
   ]

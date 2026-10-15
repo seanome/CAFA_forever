@@ -3,6 +3,7 @@ nextflow.enable.dsl = 2
 include { TIMEPOINT_BUILD } from './workflows/timepoint_build'
 include { EVALUATE_WINDOW } from './workflows/evaluate_window'
 include { EVALUATE_LATE_PREDICTIONS } from './workflows/evaluate_late_predictions'
+include { REGION_RELEASE } from './workflows/region_release'
 
 def requireParam(String name) {
     if( !params[name] ) {
@@ -51,7 +52,23 @@ workflow {
             EVALUATE_LATE_PREDICTIONS(late_eval_inputs_ch)
             break
 
+        case 'region_release':
+            def regionMeta = [
+                release_id   : requireParam('release_id'),
+                title        : requireParam('release_title'),
+                source_repo  : requireParam('source_repo'),
+                source_commit: requireParam('source_commit'),
+                run_date     : requireParam('run_date'),
+            ]
+
+            Channel
+                .of(tuple(regionMeta, file(requireParam('results_parquet'), checkIfExists: true), file(requireParam('compute_parquet'), checkIfExists: true)))
+                .set { region_inputs_ch }
+
+            REGION_RELEASE(region_inputs_ch)
+            break
+
         default:
-            error "Unsupported --mode '${params.mode}'. Expected one of: timepoint_build, evaluate_window, evaluate_late_predictions"
+            error "Unsupported --mode '${params.mode}'. Expected one of: timepoint_build, evaluate_window, evaluate_late_predictions, region_release"
     }
 }
