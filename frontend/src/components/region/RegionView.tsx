@@ -326,7 +326,7 @@ function RegionTable({ rows, notRun, onTool }: { rows: RegionRow[]; notRun: { to
   return (
     <div className="region-table-wrap">
       <p className="region-note">
-        One row per tool setting. Click a column to sort. CPU-h is reserved core-hours (cores × wall time) of the search, per
+        One row per tool setting. Click a column to sort; hover an Fmax for the score threshold that gives it, in that tool's own score. CPU-h is reserved core-hours (cores × wall time) of the search, per
         relative searched and per 1,000 human query proteins; building the relative's database is not counted. GPU-h is the
         same for GPUs. "—" means not measured. Cost = CPU-h × $0.044625 + GPU-h × $1.006 (AWS on-demand prices, US East, read
         2026-10-15).
@@ -355,7 +355,7 @@ function RegionTable({ rows, notRun, onTool }: { rows: RegionRow[]; notRun: { to
                 <span className="mono" title={settingWords(r.tool, r.setting)}>{settingShort(r.tool, r.setting)}</span>
                 {r.species === 'all' && r.tool === 'hmmscan' && <span className="tag"> no relative searched</span>}
               </th>
-              <td className="num">{fmt3(r.fmax)}</td>
+              <td className="num" title={r.threshold === null ? 'score threshold at Fmax: not recorded' : `score threshold at Fmax: ${fmtSig(r.threshold, 4)}, in ${toolName(r.tool)}'s own score`}>{fmt3(r.fmax)}</td>
               <td className="num">{fmt3(r.auprc)}</td>
               <td className="num">{fmt3(r.medianIouTp)}</td>
               <td className="num">{fmtInt(r.n)}</td>

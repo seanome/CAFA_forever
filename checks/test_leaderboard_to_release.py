@@ -74,6 +74,30 @@ def test_key_missing_a_metric_is_refused(tmp_path):
 
 
 @needs_tables
+def test_key_without_threshold_is_kept(tmp_path):
+    rows = experiment_rows()
+    keys = rows.select(conv.KEY).unique(maintain_order=True).head(5)
+    some = rows.join(keys, on=conv.KEY, how="semi")
+    first = some.filter(pl.col("metric") == "fmax_threshold").head(1).select(conv.KEY)
+    dropped = some.join(first.with_columns(pl.lit("fmax_threshold").alias("metric")),
+                        on=conv.KEY + ["metric"], how="anti")
+    assert dropped.height == some.height - 1
+    back = conv.release_to_results(convert(tmp_path, dropped))
+    assert_frame_equal(sort(back), sort(dropped), check_exact=True)
+
+
+@needs_tables
+def test_threshold_is_tau(tmp_path):
+    rows = experiment_rows()
+    pick = rows.filter((pl.col("tool") == "hmmer3_phmmer") & (pl.col("target_db") == "QfO mouse")
+                       & (pl.col("truth_source") == "Pfam-A domain instances")
+                       & (pl.col("stratum_axis") == "all") & (pl.col("dedup_or_raw") == "raw"))
+    release_dir = convert(tmp_path, pick)
+    best = pl.read_csv(release_dir / "results_ALL" / "evaluation_best_f_micro_w.tsv", separator="\t")
+    assert best["tau"].to_list() == pick.filter(pl.col("metric") == "fmax_threshold")["value"].to_list()
+
+
+@needs_tables
 def test_cost_per_1000_queries_per_relative(tmp_path):
     rows = experiment_rows()
     wide, _ = conv.widen(rows.filter(pl.col("tool") == "hmmer3_phmmer"))

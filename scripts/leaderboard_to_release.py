@@ -16,13 +16,16 @@ results_ALL/evaluation_best_f_micro_w.tsv per key below, with one column per met
     pr_micro_w     metric fmax_precision
     rc_micro_w     metric fmax_recall
     f_micro_w      metric fmax
-    tau, cov_w     empty (the long table holds no threshold; CAFA's coverage has no
-                   counterpart here)
+    tau            metric fmax_threshold: the score threshold at Fmax, in the tool's own
+                   score (phmmer bits, kmerseek region score), so it compares only within
+                   one tool and setting; empty where the source has none
+    cov_w          empty (CAFA's coverage has no counterpart here)
     <metric>       every other metric (auprc, median_iou_tp, ...) under its own name
 
 and every other long-table column under its own name, so `release_to_results()` gives the
-long rows back. Each key must carry the same set of metrics and one value of each other
-column; the script refuses the input otherwise, so nothing is merged away.
+long rows back. Each key must carry every metric except fmax_threshold, which may be absent,
+and one value of each other column; the script refuses the input otherwise, so nothing is
+merged away or filled in.
 
 Cost comes from compute.parquet's search step for the same (experiment, tool, setting).
 That row sums all relatives searched, so per 1,000 queries and per relative searched:
@@ -78,7 +81,10 @@ KEY = ["tool", "setting", "query_set", "target_db", "truth_source", "dedup_or_ra
        "stratum_axis", "stratum_bin"]
 CARRIED = ["experiment", "tool_version", "target_db_version", "target_mya_to_human",
            "n_instances", "truth_version", "source_path", "source_commit"]
-METRIC_COLUMNS = {"fmax": "f_micro_w", "fmax_precision": "pr_micro_w", "fmax_recall": "rc_micro_w"}
+METRIC_COLUMNS = {"fmax": "f_micro_w", "fmax_precision": "pr_micro_w", "fmax_recall": "rc_micro_w",
+                  "fmax_threshold": "tau"}
+# A key may lack these; their column is then empty, and reading back writes no row for it.
+OPTIONAL_METRICS = {"fmax_threshold"}
 TRUTH_IDS = {
     "Pfam-A domain instances": "pfam",
     "Pfam-N domain instances": "pfamn",
@@ -123,17 +129,20 @@ def widen(long: pl.DataFrame) -> tuple[pl.DataFrame, list[str]]:
     if long.select(KEY + ["metric"]).is_duplicated().any():
         raise ValueError("more than one results row per key and metric")
     metrics = sorted(long["metric"].unique().to_list())
+    required = [m for m in metrics if m not in OPTIONAL_METRICS]
     per_key = long.group_by(KEY).agg(
-        pl.col("metric").n_unique().alias("n_metrics"),
+        pl.col("metric").filter(pl.col("metric").is_in(required)).n_unique().alias("n_metrics"),
         *[pl.col(c).n_unique().alias(f"n_{c}") for c in CARRIED],
     )
-    if (per_key["n_metrics"] != len(metrics)).any():
+    if (per_key["n_metrics"] != len(required)).any():
         raise ValueError("some keys lack some metrics; widening would invent empty values")
     for c in CARRIED:
         if (per_key[f"n_{c}"] != 1).any():
             raise ValueError(f"column {c} differs between metrics of one key")
     wide = long.pivot(on="metric", index=KEY + CARRIED, values="value").sort(KEY)
-    return wide, metrics
+    for m in OPTIONAL_METRICS - set(metrics):
+        wide = wide.with_columns(pl.lit(None, dtype=pl.Float64).alias(m))
+    return wide, sorted(set(metrics) | OPTIONAL_METRICS)
 
 
 def join_cost(wide: pl.DataFrame, compute: pl.DataFrame, experiment: str,
@@ -277,12 +286,14 @@ def release_to_results(release_dir: Path) -> pl.DataFrame:
     with open(path, encoding="utf-8", newline="") as handle:
         reader = csv.DictReader(handle, delimiter="\t")
         fixed = set(KEY) | set(CARRIED) | {
-            "filename", "ns", "tau", "n", "cov_w", "task", "cpu_h", "peak_ram_gb", "gpu_h",
+            "filename", "ns", "n", "cov_w", "task", "cpu_h", "peak_ram_gb", "gpu_h",
             "provenance", "cost_usd_est"}
         metric_columns = [c for c in reader.fieldnames if c in back or c not in fixed]
         for row in reader:
             row = dict(row, n_instances=row["n"])
             for column in metric_columns:
+                if row[column] == "" and back.get(column, column) in OPTIONAL_METRICS:
+                    continue
                 for name in LONG_SCHEMA:
                     if name == "metric":
                         out[name].append(back.get(column, column))
