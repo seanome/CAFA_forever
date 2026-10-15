@@ -103,8 +103,11 @@ export function validateCatalog(value: unknown): Catalog {
   catalog.releases.forEach((release, index) => {
     const item = assertRecord(release, `catalog.releases[${index}]`)
     assertString(item.id, `catalog.releases[${index}].id`)
-    assertString(item.startTimepoint, `catalog.releases[${index}].startTimepoint`)
-    assertString(item.endTimepoint, `catalog.releases[${index}].endTimepoint`)
+    // Only a GO release is a T0-T1 window with timepoints.
+    if ((item.task ?? 'go_whole_protein') === 'go_whole_protein') {
+      assertString(item.startTimepoint, `catalog.releases[${index}].startTimepoint`)
+      assertString(item.endTimepoint, `catalog.releases[${index}].endTimepoint`)
+    }
     if (item.status !== 'ready' && item.status !== 'pending' && item.status !== 'invalid') {
       throw new Error(`catalog.releases[${index}].status is invalid`)
     }

@@ -1,0 +1,17 @@
+CAFA_forever (LAFA), seanome fork
+
+This program is free software, licensed under the GNU General Public License version 3;
+see LICENSE.
+
+Upstream: https://github.com/anphan0828/CAFA_forever (same history as
+FriedbergLab/CAFA_forever). Upstream's copyright line, kept unchanged in the site footer:
+"(c) Iowa State University of Science and Technology". Upstream commits are by An Phan
+and Henri Chung.
+
+Fork: https://github.com/seanome/CAFA_forever. The region-transfer task, the release
+converter (scripts/leaderboard_to_release.py, modules/local/region_release.nf), the
+region views (frontend/src/components/region/), the theme and the GitHub Pages build:
+Copyright (C) 2026 Seanome.
+
+Fantasque Sans Mono (frontend/public/fonts/) is under the SIL Open Font License 1.1;
+see frontend/public/fonts/FantasqueSansMono-LICENSE.txt.

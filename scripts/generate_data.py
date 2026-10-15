@@ -455,6 +455,9 @@ def region_values(row: dict) -> dict:
     for column in REGION_EXTRA_COLUMNS:
         key = "".join(w.capitalize() if i else w for i, w in enumerate(column.split("_")))
         value = row.get(column, "")
+        if column == "truth_set":
+            # The truth set is stored once, in ns.
+            value = value or row.get("ns", "")
         if column == "dedup":
             out[key] = parse_bool(value)
         elif column in REGION_INT_COLUMNS:
@@ -621,7 +624,8 @@ def main():
         names = []
         for card in sorted(cards_dir.glob("*.json")):
             (cards_out / card.name).write_text(card.read_text(encoding="utf-8"), encoding="utf-8")
-            names.append(card.stem)
+            if card.name != "SOURCE.json":
+                names.append(card.stem)
         with open(cards_out / "index.json", "w", encoding="utf-8") as f:
             json.dump({"tools": names}, f, indent=2)
         print(f"\nCopied {len(names)} tool cards")

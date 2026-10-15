@@ -7,6 +7,15 @@ export interface ReleaseEntry {
   startTimepoint: string
   endTimepoint: string
   status: 'ready' | 'pending' | 'invalid'
+  /** go_whole_protein (LAFA's releases) or region_transfer; absent means GO */
+  task?: TaskId
+  title?: string
+}
+
+export type TaskId = 'go_whole_protein' | 'region_transfer'
+
+export function releaseTask(release: ReleaseEntry): TaskId {
+  return release.task ?? 'go_whole_protein'
 }
 
 export interface TimepointDates {

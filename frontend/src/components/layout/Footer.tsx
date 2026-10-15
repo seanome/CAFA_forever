@@ -1,3 +1,4 @@
+import { siteUrl } from '../../lib/basePath'
 import './Footer.css'
 
 export function Footer() {
@@ -14,7 +15,7 @@ export function Footer() {
               aria-label="Iowa State University of Science and Technology"
             >
               <img
-                src="/assets/iastate/iowa-state-university-logo-with-tagline-sci-tech.svg"
+                src={siteUrl('assets/iastate/iowa-state-university-logo-with-tagline-sci-tech.svg')}
                 alt="Iowa State University - Science with Practice"
                 className="site-footer__logo"
               />
@@ -56,6 +57,11 @@ export function Footer() {
         <div className="site-footer__inner site-footer__inner--bottom">
           <p className="site-footer__copyright">
             &copy; {currentYear} Iowa State University of Science and Technology
+          </p>
+          <p className="site-footer__copyright">
+            Region-transfer views &copy; 2026 Seanome. This site is{' '}
+            <a href="https://github.com/seanome/CAFA_forever">seanome/CAFA_forever</a>, a fork of{' '}
+            <a href="https://github.com/anphan0828/CAFA_forever">LAFA (anphan0828/CAFA_forever)</a>, under the GNU GPL v3.
           </p>
         </div>
       </div>

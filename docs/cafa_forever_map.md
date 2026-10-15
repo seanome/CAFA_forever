@@ -127,4 +127,9 @@ The frontend only reads the results. `SUBSETS` in `generate_data.py` and in
 | Optional columns on `evaluation_best_f_micro_w.tsv` and `evaluation_all.tsv`: `task`, `stratum_axis`, `stratum_bin`, `cpu_h`, `peak_ram_gb`, `gpu_h`, `provenance`, `cost_usd_est`. A GO release without them reads as `task = go_whole_protein`, stratum `all`, cost unknown. | `scripts/release_contract.py`, used by `generate_data.py` and `publish_release_windows.py` |
 | A second task, `region_transfer`: a release folder with `release_info.tsv` and one setting, `results_ALL/` | same |
 | The converter from `results.parquet` and `compute.parquet` to a release folder | `scripts/leaderboard_to_release.py`, `modules/local/region_release.nf`, `workflows/region_release.nf`, `--mode region_release` in `main.nf` |
-| The region-transfer views, tool cards, task switch, fonts, and the GitHub Pages build | `frontend/src/`, `.github/workflows/pages.yml` |
+| The region-transfer views, tool cards, task switch, fonts, and the GitHub Pages build | `frontend/src/components/region/`, `frontend/src/lib/regionLabels.ts`, `frontend/src/index.css`, `data/tool_cards/`, `.github/workflows/pages.yml`, `make pages` |
+| The Streamlit app skips region releases | `app/config.py` (`_release_task`) |
+| Checks: converter round trip, contract rules, GO JSON unchanged | `checks/` (upstream's `.gitignore` ignores `tests/`) |
+| The `PREDICT_FUNBIND_BATCH` stub fix | `modules/local/predictions.nf` |
+
+Licence: GPL-3.0 as upstream; see `NOTICE` for upstream's copyright line and Seanome's.

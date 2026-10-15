@@ -1,3 +1,4 @@
+import { siteUrl } from '../lib/basePath'
 import { useState, useEffect, useCallback } from 'react'
 import type {
   ReleaseMeta,
@@ -58,7 +59,7 @@ export function useReleaseData(releaseId: string | null): UseReleaseDataResult {
 
     async function fetchData() {
       try {
-        const basePath = `/data/releases/${releaseId}`
+        const basePath = siteUrl(`data/releases/${releaseId}`)
 
         const [metaRes, methodsRes, bestRes] = await Promise.all([
           fetch(`${basePath}/meta.json`, { cache: 'no-store' }),
@@ -104,7 +105,7 @@ export function useReleaseData(releaseId: string | null): UseReleaseDataResult {
 
     setCurvesLoading(true)
     try {
-      const response = await fetch(`/data/releases/${releaseId}/curves.json`, { cache: 'no-store' })
+      const response = await fetch(siteUrl(`data/releases/${releaseId}/curves.json`), { cache: 'no-store' })
       if (!response.ok) {
         throw new Error('Failed to load curves data')
       }
@@ -133,7 +134,7 @@ export function useMethodsConfig() {
 
     async function fetchConfig() {
       try {
-        const response = await fetch('/data/methods.json', { cache: 'no-store' })
+        const response = await fetch(siteUrl('data/methods.json'), { cache: 'no-store' })
         if (!response.ok) {
           throw new Error('Failed to load methods config')
         }

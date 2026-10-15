@@ -145,6 +145,19 @@ def _load_catalog_entries():
     return [_normalize_catalog_entry(entry) for entry in entries]
 
 
+def _release_task(release_path):
+    """Task named in release_info.tsv; a release without that file is LAFA's GO task."""
+    info_path = Path(release_path) / "release_info.tsv"
+    if not info_path.exists():
+        return "go_whole_protein"
+    with info_path.open("r", encoding="utf-8") as handle:
+        for line in handle:
+            key, _, value = line.rstrip("\n").partition("\t")
+            if key == "task":
+                return value.strip()
+    return "go_whole_protein"
+
+
 def get_release_catalog():
     """
     Return validated releases and excluded releases.
@@ -185,6 +198,10 @@ def get_release_catalog():
 
         if not release_path.exists():
             invalid[release_id] = [f"release path not found: {release_path}"]
+            continue
+
+        if _release_task(release_path) != "go_whole_protein":
+            # Region-transfer releases (seanome fork) are shown by the React frontend only.
             continue
 
         inspection = inspect_release_dir(release_path)

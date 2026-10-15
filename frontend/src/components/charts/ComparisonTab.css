@@ -49,13 +49,13 @@
 }
 
 .comparison-tab__legend-item--a {
-  background: var(--isu-cardinal);
+  background: var(--window-a);
   color: var(--isu-white);
 }
 
 .comparison-tab__legend-item--b {
-  background: var(--isu-gold);
-  color: var(--isu-charcoal);
+  background: var(--window-b);
+  color: var(--surface);
 }
 
 .comparison-tab__legend-vs {
@@ -177,7 +177,7 @@
 }
 
 .comparison-tab__subtab:focus-visible {
-  outline: 2px solid var(--isu-gold);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 

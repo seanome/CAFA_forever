@@ -82,12 +82,12 @@ export function ComparisonFacet({
           />
           <Bar
             dataKey={`${metric}_A`}
-            fill="var(--isu-cardinal)"
+            fill="var(--window-a)"
             radius={[3, 3, 0, 0]}
           />
           <Bar
             dataKey={`${metric}_B`}
-            fill="var(--isu-gold)"
+            fill="var(--window-b)"
             radius={[3, 3, 0, 0]}
           />
         </BarChart>

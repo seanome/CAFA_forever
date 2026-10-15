@@ -19,9 +19,10 @@ interface TargetCountChartProps {
 }
 
 const ASPECT_COLORS = {
-  biological_process: '#4477AA',
-  molecular_function: '#228833',
-  cellular_component: '#EE6677',
+  // Three greys: aspects are labelled, so no hue is spent on them (index.css).
+  biological_process: 'var(--aspect-bp)',
+  molecular_function: 'var(--aspect-mf)',
+  cellular_component: 'var(--aspect-cc)',
 }
 
 export function TargetCountChart({ targetCounts }: TargetCountChartProps) {

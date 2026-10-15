@@ -1,5 +1,5 @@
 .timeline-selector {
-  --timeline-accent: var(--isu-cardinal);
+  --timeline-accent: var(--window-a);
   background: var(--isu-white);
   border: 1px solid var(--isu-border);
   border-radius: 8px;
@@ -182,8 +182,8 @@
 
 .timeline-selector__warning {
   font-size: 0.75rem;
-  color: #856404;
-  background: #fff3cd;
+  color: var(--muted);
+  background: var(--surface);
   padding: 0.125rem 0.5rem;
   border-radius: 4px;
 }

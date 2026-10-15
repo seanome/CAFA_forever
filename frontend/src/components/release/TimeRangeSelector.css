@@ -58,7 +58,7 @@
 .time-range-selector__select:focus {
   outline: none;
   border-color: var(--isu-cardinal);
-  box-shadow: 0 0 0 3px rgba(200, 16, 46, 0.15);
+  box-shadow: 0 0 0 3px rgba(20, 90, 99, 0.15);
 }
 
 .time-range-selector__select:disabled {
@@ -90,13 +90,13 @@
 }
 
 .time-range-selector__status--valid {
-  background: #d4edda;
-  color: #155724;
+  background: var(--chip);
+  color: var(--ink);
 }
 
 .time-range-selector__status--invalid {
-  background: #fff3cd;
-  color: #856404;
+  background: var(--surface);
+  color: var(--muted);
 }
 
 .time-range-selector__status svg {
@@ -136,7 +136,7 @@
 }
 
 .time-range-selector__preset:focus-visible {
-  outline: 2px solid var(--isu-gold);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 

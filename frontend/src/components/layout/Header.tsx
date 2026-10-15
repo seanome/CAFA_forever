@@ -1,3 +1,4 @@
+import { siteUrl } from '../../lib/basePath'
 import { useState } from 'react'
 import './Header.css'
 
@@ -17,7 +18,7 @@ export function Header() {
             aria-label="Iowa State University"
           >
             <img
-              src="/assets/iastate/iowa-state-university-logo-with-tagline-red.svg"
+              src={siteUrl('assets/iastate/iowa-state-university-logo-with-tagline-red.svg')}
               alt="Iowa State University of Science and Technology"
               height="40"
             />
